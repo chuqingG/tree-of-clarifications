@@ -106,7 +106,7 @@ class HFModel(SelfLM):
         return [c["text"] for c in response["choices"]]
 
 
-if __name__ == "__main__":
-    model = HFModel(model="google/flan-t5-base")
-    response = model("Who was the first man to walk on the moon?\nFinal answer: ")
-    print(response)
+# if __name__ == "__main__":
+#     model = HFModel(model="google/flan-t5-base")
+#     response = model("Who was the first man to walk on the moon?\nFinal answer: ")
+#     print(response)

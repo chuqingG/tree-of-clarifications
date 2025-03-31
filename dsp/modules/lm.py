@@ -22,6 +22,7 @@ class SelfLM(ABC):
         # Set the provider to openai for chat completions (GPT-3.5-turbo, GPT-4, etc.)
         self.provider = "openai"
         self.history = []
+    
 
     @abstractmethod
     def basic_request(self, prompt, **kwargs):
@@ -58,7 +59,9 @@ class SelfLM(ABC):
 
         for prompt, choices in reversed(printed):
             print("\n\n\n")
-            print(prompt, end="")
+            plen = len(prompt.split(" "))
+            print(f"Here is prompt, the length is {plen}\n-----\n{prompt}", end="")
+            
             text = ""
             if self.provider == "openai":
                 text = self._get_choice_text(choices[0])

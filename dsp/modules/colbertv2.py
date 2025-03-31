@@ -20,7 +20,7 @@ class ColBERTv2:
     ):
         self.post_requests = post_requests
         self.url = f"{url}:{port}" if port else url
-        print(f"Using ColBERTv2 at {self.url}")
+        # print(f"Using ColBERTv2 at {self.url}")
 
     def __call__(
         self, query: str, k: int = 10, simplify: bool = False

@@ -173,7 +173,7 @@ def main():
         n_dev = len(dev)
     else:
         n_dev = min(args.n_dev, len(dev))
-    print(f"Number of dev examples: {n_dev}")
+
         
     os.makedirs(args.output_dir, exist_ok=True)
     save_steps = [int(save_step) for save_step in args.save_steps.split(",")] if args.save_steps != "" else []
@@ -189,8 +189,9 @@ def main():
         all_passages = retrieve_passages(args, ambig_ins)
         cur_passages = all_passages.copy()
         toc = ToC(root=Node(ambig_ins))
-        do_pruning = args.verify == True
-        n_restarts = 0 ; n_expansions = 0
+        do_pruning = (args.verify == True)
+        n_restarts = 0
+        n_expansions = 0
         
         while n_restarts < args.max_trials and \
             toc.n_nodes < args.max_nodes and \
@@ -259,7 +260,9 @@ def main():
             print(f"Saved output_{idx}.json!")
     
     lm.inspect_history(n=1)
-    
+    if isinstance(lm, dsp.SelfLLM):
+        lm.show_cost()
+
     save_results(args, data, preds, outputs)
 
 if __name__ == "__main__":
