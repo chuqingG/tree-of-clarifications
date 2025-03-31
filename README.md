@@ -3,9 +3,6 @@
 This is the official repository for our EMNLP 2023 paper:
 [Tree of Clarifications: Answering Ambiguous Questions with Retrieval-Augmented Large Language Models](https://arxiv.org/abs/2310.14696)
 
-<div align="center">
-  <img alt="ToC Overview" src="https://github.com/gankim/tree-of-clarifications/blob/main/assets/overview.png" width="400px">
-</div>
 
 ## Summary
 We propose a novel framework, <b>Tree of Clarifications (ToC)</b> designed for generating long-form answers to ambiguous questions.

@@ -2,7 +2,7 @@ import math
 from typing import Any, Optional
 import backoff
 
-from dsp.modules.lm import LM
+from dsp.modules.lm import SelfLM
 
 try:
     import cohere
@@ -28,7 +28,7 @@ def giveup_hdlr(details):
     return True
 
 
-class Cohere(LM):
+class Cohere(SelfLM):
     """Wrapper around Cohere's API.
 
     Currently supported models include `medium-20221108`, `xlarge-20221108`, `command-medium-nightly`, and `command-xlarge-nightly`.

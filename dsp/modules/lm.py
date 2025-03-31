@@ -1,10 +1,15 @@
 from abc import ABC, abstractmethod
 
 
-class LM(ABC):
-    """Abstract class for language models."""
+class SelfLM(ABC):
+    """
+    Abstract class for language models.
 
-    def __init__(self, model):
+    This base class now assumes an OpenAI-style provider and supports chat-based models,
+    including gpt-3.5-turbo and gpt-4. Subclasses should implement basic_request() and __call__().
+    """
+
+    def __init__(self, model: str):
         self.kwargs = {
             "model": model,
             "temperature": 0.0,
@@ -14,12 +19,15 @@ class LM(ABC):
             "presence_penalty": 0,
             "n": 1,
         }
-        self.provider = "default"
-
+        # Set the provider to openai for chat completions (GPT-3.5-turbo, GPT-4, etc.)
+        self.provider = "openai"
         self.history = []
 
     @abstractmethod
     def basic_request(self, prompt, **kwargs):
+        """
+        Abstract method to issue a basic request to the language model.
+        """
         pass
 
     def request(self, prompt, **kwargs):
@@ -32,29 +40,19 @@ class LM(ABC):
         print("\x1b[31m" + str(text) + "\x1b[0m", end=end)
 
     def inspect_history(self, n: int = 1):
-        """Prints the last n prompts and their completions.
-        TODO: print the valid choice that contains filled output field instead of the first
         """
-        provider: str = self.provider
-
+        Prints the last n prompts and their completions.
+        """
         last_prompt = None
         printed = []
-
-        for x in reversed(self.history[-100:]):
-            prompt = x["prompt"]
-
+        # Iterate over the last 100 history items
+        for entry in reversed(self.history[-100:]):
+            prompt = entry["prompt"]
             if prompt != last_prompt:
-                printed.append(
-                    (
-                        prompt,
-                        x["response"].generations
-                        if provider == "cohere"
-                        else x["response"]["choices"],
-                    )
-                )
-
+                # For openai provider, choices are stored in entry["response"]["choices"]
+                choices = entry["response"]["choices"]
+                printed.append((prompt, choices))
             last_prompt = prompt
-
             if len(printed) >= n:
                 break
 
@@ -62,18 +60,27 @@ class LM(ABC):
             print("\n\n\n")
             print(prompt, end="")
             text = ""
-            if provider == "cohere":
-                text = choices[0].text
-            elif provider == "openai":
+            if self.provider == "openai":
                 text = self._get_choice_text(choices[0])
             else:
-                text = choices[0]["text"]
+                text = choices[0].get("text", "")
             self.print_green(text, end="")
-
             if len(choices) > 1:
-                self.print_red(f" \t (and {len(choices)-1} other completions)", end="")
+                self.print_red(f" \t (and {len(choices) - 1} other completions)", end="")
             print("\n\n\n")
+
+    def _get_choice_text(self, choice: dict) -> str:
+        """
+        Default method to extract text from a completion choice.
+        For chat models (gpt-3.5-turbo, gpt-4), it returns the content of the message.
+        """
+        if "message" in choice:
+            return choice["message"].get("content", "")
+        return choice.get("text", "")
 
     @abstractmethod
     def __call__(self, prompt, only_completed=True, return_sorted=False, **kwargs):
+        """
+        Abstract method to retrieve completions from the language model.
+        """
         pass

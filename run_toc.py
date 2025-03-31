@@ -3,6 +3,7 @@ import json
 import dsp
 import argparse
 from tqdm import tqdm
+from dotenv import load_dotenv
 
 from toc import (
     rerank,
@@ -125,38 +126,34 @@ def remove_dup_psgs(passages, contexts, lst_disambigs):
 def get_argparser():
     parser = argparse.ArgumentParser()
     # Required parameters
-    parser.add_argument("--data_dir", default=None, type=str, required=True, help="The input data dir.")
     parser.add_argument("--data_name", default="ASQA.json", type=str, help="The input data name.")
-    parser.add_argument("--bing_path", default=None, type=str, help="The bing data path.")
     parser.add_argument("--prefix", default='', type=str, help="The prefix of output files.")
-    parser.add_argument("--model_type", default='text-davinci-003', type=str, help="The GPT model type.")
-    parser.add_argument("--openai_key",  default='', type=str, required=True, help="The openai key.")
-    parser.add_argument("--colbert_url", default='', type=str,required=True, help= "The colbert server url.")
     parser.add_argument("--temperature", default=0.7, type=float, help="The temperature for generation.")
     parser.add_argument("--n_shot", default=5, type=int, help="The number of few-shot examples for in-context learning.")
     parser.add_argument("--n_dev", default=-1, type=int, help="The number of dev examples to run.")
     parser.add_argument("--max_nodes", default=10, type=int, help="The maximum number of nodes in a tree.")
     parser.add_argument("--max_depth", default=3, type=int, help="The maximum depth of a tree.")
     parser.add_argument("--max_trials", default=3, type=int, help="The maximum number of restarts.")
-    parser.add_argument("--top_k_docs", default=100, type=int, help="The maximum number of retrieved documents.")
+    parser.add_argument("--top_k_docs", default=10, type=int, help="The maximum number of retrieved documents.")
     parser.add_argument("--top_k_reranked", default=5, type=int, help="The maximum number of reranked documents.")
     parser.add_argument("--save_steps", default="", type=str, help="you can save intermediate results.")
     parser.add_argument("--verify", default=False, action='store_true',)
-    parser.add_argument(
-        "--output_dir",
-        default=None,
-        type=str,
-        required=True,
-        help="The output directory where predictions will be written.",
-    )
+    
     return parser
 
-def main():    
+def main():        
     parser = get_argparser()
     args = parser.parse_args()
+    if "OPENAI_API_KEY" not in os.environ:
+        load_dotenv()
+        args.openai_key = os.getenv("OPENAI_API_KEY")
+        args.colbert_server = os.getenv("COLBERT_URL")
+        args.data_dir = os.getenv("ASQA_DIR")
+        args.output_dir = os.getenv("OUT_DIR")
+        args.model_name = os.getenv("MODEL_NAME")
     
     ## Set DSP configuration
-    lm = dsp.GPT3(model=args.model_type, api_key=args.openai_key)
+    lm = dsp.SelfLLM(model=args.model_name, api_key=args.openai_key)
     rm = dsp.ColBERTv2(url=args.colbert_server)
     kw_config = {'lm' : lm, 'rm' : rm}
 
@@ -171,31 +168,25 @@ def main():
     kw_args_ex = {}
     if args.top_k_reranked > 0:
         kw_args_ex['reranker'] = dsp.settings.reranker
-    
-    if args.bing_path is not None:
-        bing_results = json.load(open(args.bing_path))
-        assert len(bing_results) == len(dev)
 
     if args.n_dev < 0:
         n_dev = len(dev)
     else:
         n_dev = min(args.n_dev, len(dev))
+    print(f"Number of dev examples: {n_dev}")
         
     os.makedirs(args.output_dir, exist_ok=True)
     save_steps = [int(save_step) for save_step in args.save_steps.split(",")] if args.save_steps != "" else []
     
     preds = [] ; outputs = []
     lst_err = []
-    bing_passages = None
+
     for idx, ambig_ins in enumerate(tqdm(dev[:n_dev])):
         cur_demos = train.copy()
         if (idx + 1) % 10 == 0:
             print(f"{str(idx +1)} steps")
         
-        if args.bing_path is not None:
-            bing_passages = bing_results[idx]
-        
-        all_passages = retrieve_passages(args, ambig_ins, bing_passages=bing_passages)
+        all_passages = retrieve_passages(args, ambig_ins)
         cur_passages = all_passages.copy()
         toc = ToC(root=Node(ambig_ins))
         do_pruning = args.verify == True
@@ -237,8 +228,7 @@ def main():
                             ver_completion = verify_with_evidence(dsp.settings.lm, 
                                                                 toc, 
                                                                 disambig, 
-                                                                dsp.settings.reranker,
-                                                                all_passages)
+                                                                dsp.settings.reranker)
                             if "True" in ver_completion[0]:
                                 valid_disambigs += [disambig]
                     lst_disambigs = valid_disambigs.copy()

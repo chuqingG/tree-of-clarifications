@@ -1,5 +1,5 @@
 from typing import Optional, Literal
-from dsp.modules.lm import LM
+from dsp.modules.lm import SelfLM
 
 
 def openai_to_hf(**kwargs):
@@ -21,7 +21,7 @@ def openai_to_hf(**kwargs):
     return hf_kwargs
 
 
-class HFModel(LM):
+class HFModel(SelfLM):
     def __init__(self, model: str, checkpoint: Optional[str] = None, is_client: bool = False,
                  hf_device_map: Literal["auto", "balanced", "balanced_low_0", "sequential"] = "auto"):
         """wrapper for Hugging Face models
