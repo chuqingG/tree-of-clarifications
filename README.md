@@ -24,33 +24,7 @@ conda activate toc
 ## Preparing the Dataset
 Access and download the ASQA dataset [here](https://github.com/google-research/language/tree/master/language/asqa) or utilize the pre-packaged version in our repository at `./asqa/ASQA.json`
 
-### Integrating Bing Search Engine Results
-ToC is capable of incorporating search results from external sources, such as the Bing search engine, to enhance answer quality. Follow the script below to fetch search results, or use our pre-compiled dataset at ./bing/results.json. Omitting this step is an option but may slightly impact ToC's performance.
-
-Set your Bing API credentials:
-
-```
-export BING_SUBSCRIPTION_KEY= # your Bing API key here
-export BING_SEARCH_URL= # your Bing search URL here
-```
-
-Please refer to the [tutorial](https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-python-4165d5592a7e) for detailed information about setting up your subscription.
-
-Set the directory paths for the ASQA dataset and Bing search results. Run the following script to search Wikipedia documents relevant to ambiguous questions and save the results in `$BING_DIR`.
-
-```
-export ASQA_DIR= # directory path to the ASQA dataset
-export BING_DIR= # directory path to Bing search results
-
-python bing_search.py \
-    --data_dir $ASQA_DIR \
-    --output_dir $BING_DIR
-
-python get_wiki.py \
-    --data_dir $BING_DIR \
-    --output_dir "top100" \
-    --top_k 100 \
-```
+> Note: this repo disabled the bing search components 
 
 ## Answering ambiguous questions with ToC
 

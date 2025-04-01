@@ -67,7 +67,8 @@ def get_example(args, train, ins, passages,
         dic_example.update({'disambig' : ins.disambig})
         
     example = dsp.Example(**dic_example)
-    
+    print("======== Example =========")
+    print(example)
     return example
 
 
@@ -82,7 +83,8 @@ def QD_predict(example: dsp.Example, qd_template,
     }
     
     out_example = example.copy(**kw_out)
-    
+    print("======== QD Predict =========")
+    print(out_example)
     return out_example, completions
 
 def remove_demos(demos, target_ids):
@@ -134,8 +136,8 @@ def get_argparser():
     parser.add_argument("--max_nodes", default=10, type=int, help="The maximum number of nodes in a tree.")
     parser.add_argument("--max_depth", default=3, type=int, help="The maximum depth of a tree.")
     parser.add_argument("--max_trials", default=3, type=int, help="The maximum number of restarts.")
-    parser.add_argument("--top_k_docs", default=10, type=int, help="The maximum number of retrieved documents.")
-    parser.add_argument("--top_k_reranked", default=5, type=int, help="The maximum number of reranked documents.")
+    parser.add_argument("--top_k_docs", default=5, type=int, help="The maximum number of retrieved documents.")
+    parser.add_argument("--top_k_reranked", default=3, type=int, help="The maximum number of reranked documents.")
     parser.add_argument("--save_steps", default="", type=str, help="you can save intermediate results.")
     parser.add_argument("--verify", default=False, action='store_true',)
     
@@ -187,6 +189,8 @@ def main():
             print(f"{str(idx +1)} steps")
         
         all_passages = retrieve_passages(args, ambig_ins)
+        print(f"====Retrieving passages====")
+        print(f"First Passage: {all_passages[0]}")
         cur_passages = all_passages.copy()
         toc = ToC(root=Node(ambig_ins))
         do_pruning = (args.verify == True)

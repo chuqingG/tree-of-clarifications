@@ -41,7 +41,7 @@ class ColBERTv2:
     backoff.expo,
     (requests.exceptions.RequestException, KeyError),
     # Adjust or remove these limits if you want more or fewer retries:
-    max_tries=5,
+    max_tries=10,
     max_time=30
 )
 def colbertv2_get_request_v2(url: str, query: str, k: int):
