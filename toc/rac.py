@@ -1,7 +1,7 @@
 import dsp
 
-def retrieve_passages(args, ins):
-    question = ins.question
-    passages = dsp.retrieve(question, k=args.top_k_docs)
+def retrieve_passages(topk, question):
+    # question = ins.question
+    passages = dsp.retrieve(question, k=topk)
     
     return passages

@@ -188,7 +188,7 @@ def main():
         if (idx + 1) % 10 == 0:
             print(f"{str(idx +1)} steps")
         
-        all_passages = retrieve_passages(args, ambig_ins)
+        all_passages = retrieve_passages(args.top_k_docs, ambig_ins.question)
         print(f"====Retrieving passages====")
         print(f"First Passage: {all_passages[0]}")
         cur_passages = all_passages.copy()
