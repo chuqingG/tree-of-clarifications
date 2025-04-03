@@ -70,9 +70,8 @@ class SelfLLM(SelfLM):
             if kwargs.get("api_version"):
                 openai.api_version = kwargs["api_version"]
 
-        if api_key:
-            openai.api_key = api_key
-
+        # if api_key:
+        #     openai.api_key = api_key
         self.kwargs = {
             "temperature": 0.0,
             "max_tokens": 300,
@@ -82,8 +81,12 @@ class SelfLLM(SelfLM):
             "n": 1,
             **kwargs,
         }
-        if api_provider == "openai":
+        
+        self.client = None
+        if api_provider == "openai" and api_key:
             self.kwargs["model"] = model
+            self.client = openai.OpenAI(api_key=api_key)
+        
         self.history: list[dict[str, Any]] = []
         self.api_cost = 0.0
 
@@ -92,9 +95,7 @@ class SelfLLM(SelfLM):
         kwargs = {**self.kwargs, **kwargs}
         # Always use the chat format
         kwargs["messages"] = [{"role": "user", "content": prompt}]
-        # Stringify the request for caching purposes
-        kwargs = {"stringify_request": json.dumps(kwargs)}
-        response = cached_chat_request(**kwargs)
+        response = self.client.chat.completions.create(**kwargs)
         history = {
             "prompt": prompt,
             "response": response,
@@ -103,11 +104,11 @@ class SelfLLM(SelfLM):
         }
         self.history.append(history)
         
-        usage = response.get("usage", {})
-        if usage:
-            prompt_tokens = usage.get("prompt_tokens", 0)
-            completion_tokens = usage.get("completion_tokens", 0)
-            cost = self.calculate_cost(prompt_tokens, completion_tokens)
+        if response.usage:
+            cost = self.calculate_cost(
+                response.usage.prompt_tokens, 
+                response.usage.completion_tokens
+            )
             self.api_cost += cost
         #     print(f"[Cost Tracking] This call cost ${cost:.6f}. Total cost so far: ${self.api_cost:.6f}")
         # else:
@@ -151,26 +152,10 @@ class SelfLLM(SelfLM):
             list[str]: List of completion strings.
         """
         response = self.request(prompt, **kwargs)
-        choices = response["choices"]
-        completed_choices = [c for c in choices if c.get("finish_reason", "") != "length"]
+        choices = response.choices
+        completed_choices = [c for c in choices if c.finish_reason != "length"]
         if only_completed and completed_choices:
             choices = completed_choices
-        completions = [c["message"]["content"] for c in choices]
+        completions = [c.message.content for c in choices]
         # Note: Sorting by logprobs is not applicable to ChatCompletion responses.
         return completions
-
-
-@CacheMemory.cache
-def cached_chat_request_v2(**kwargs) -> Any:
-    if "stringify_request" in kwargs:
-        kwargs = json.loads(kwargs["stringify_request"])
-    return openai.ChatCompletion.create(**kwargs)
-
-
-@functools.lru_cache(maxsize=None if cache_turn_on else 0)
-@NotebookCacheMemory.cache
-def cached_chat_request_v2_wrapped(**kwargs) -> Any:
-    return cached_chat_request_v2(**kwargs)
-
-
-cached_chat_request = cached_chat_request_v2_wrapped
