@@ -4,8 +4,9 @@ from typing import Any, Literal, Optional, cast
 
 import backoff
 import openai
-import openai.error
-from openai.openai_object import OpenAIObject
+# import openai.exceptions
+# import openai.error
+# from openai.openai_object import OpenAIObject
 
 from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
 from dsp.modules.lm import SelfLM
@@ -86,7 +87,7 @@ class SelfLLM(SelfLM):
         self.history: list[dict[str, Any]] = []
         self.api_cost = 0.0
 
-    def basic_request(self, prompt: str, **kwargs) -> OpenAIObject:
+    def basic_request(self, prompt: str, **kwargs) -> Any:
         raw_kwargs = kwargs
         kwargs = {**self.kwargs, **kwargs}
         # Always use the chat format
@@ -115,11 +116,11 @@ class SelfLLM(SelfLM):
 
     @backoff.on_exception(
         backoff.expo,
-        (openai.error.RateLimitError, openai.error.ServiceUnavailableError),
+        (openai._exceptions.RateLimitError, openai._exceptions.APIError),
         max_time=1000,
         on_backoff=backoff_hdlr,
     )
-    def request(self, prompt: str, **kwargs) -> OpenAIObject:
+    def request(self, prompt: str, **kwargs) -> Any:
         return self.basic_request(prompt, **kwargs)
 
     def calculate_cost(self, input_tokens: int, output_tokens: int) -> float:
@@ -160,15 +161,15 @@ class SelfLLM(SelfLM):
 
 
 @CacheMemory.cache
-def cached_chat_request_v2(**kwargs) -> OpenAIObject:
+def cached_chat_request_v2(**kwargs) -> Any:
     if "stringify_request" in kwargs:
         kwargs = json.loads(kwargs["stringify_request"])
-    return cast(OpenAIObject, openai.ChatCompletion.create(**kwargs))
+    return openai.ChatCompletion.create(**kwargs)
 
 
 @functools.lru_cache(maxsize=None if cache_turn_on else 0)
 @NotebookCacheMemory.cache
-def cached_chat_request_v2_wrapped(**kwargs) -> OpenAIObject:
+def cached_chat_request_v2_wrapped(**kwargs) -> Any:
     return cached_chat_request_v2(**kwargs)
 
 

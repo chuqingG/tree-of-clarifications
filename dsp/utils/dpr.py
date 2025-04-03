@@ -4,7 +4,7 @@
 """
 
 import string
-import spacy
+# import spacy  # comment for pydantic version conflict with new openai
 import regex
 import unicodedata
 
